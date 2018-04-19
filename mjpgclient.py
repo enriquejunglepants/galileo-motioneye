@@ -230,8 +230,8 @@ class MjpgClient(IOStream):
         self.read_bytes(length, self._on_jpg)
 
     def _on_jpg(self, data):
-        #self._last_jpg = data
-        self._last_jpg = open('test.jpg','rb').read()
+        self._last_jpg = data
+        #self._last_jpg = open('test.jpg','rb').read()
         self._last_jpg_times.append(time.time())
         while len(self._last_jpg_times) > self._FPS_LEN:
             self._last_jpg_times.pop(0)
