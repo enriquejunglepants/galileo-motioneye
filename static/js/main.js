@@ -1021,8 +1021,10 @@ function updateLayout() {
         var windowWidth = $(window).width();
         
         var columns = layoutColumns;
+	var rows = layoutRows;
         if (isFullScreen() || windowWidth <= 1200) {
             columns = 1; /* always 1 column when in full screen or mobile */
+	    rows = 1;
         }
         
         var heightOffset = 10; /* some padding */
@@ -1031,7 +1033,7 @@ function updateLayout() {
         }
     
         var windowHeight = $(window).height() - heightOffset;
-        var ratio = maxHeightFrame.width() / maxHeightFrame.height() / layoutRows;
+        var ratio = maxHeightFrame.width() / maxHeightFrame.height() / rows;
         var width = parseInt(ratio * windowHeight * columns);
         var maxWidth = windowWidth;
         
@@ -4420,6 +4422,11 @@ function addCameraFrameUi(cameraConfig) {
                         '</div>' +
                     '</div>' +
                     '<div class="camera-overlay-mask"></div>' +
+                                '<div class="button icon camera-action-button mouse-effect up" title="up"></div>' +
+                                '<div class="button icon camera-action-button mouse-effect down" title="down"></div>' +
+                                '<div class="button icon camera-action-button mouse-effect left" title="left"></div>' +
+                                '<div class="button icon camera-action-button mouse-effect right" title="right"></div>' +
+
                     '<div class="camera-overlay-bottom">' +
                         '<div class="camera-info">' +
                             '<span class="camera-info" title="streaming/capture frame rate"></span>' +
@@ -4434,10 +4441,6 @@ function addCameraFrameUi(cameraConfig) {
                                 '<div class="button icon camera-action-button mouse-effect alarm-off" title="turn alarm off"></div>' +
                                 '<div class="button icon camera-action-button mouse-effect snapshot" title="take a snapshot"></div>' +
                                 '<div class="button icon camera-action-button mouse-effect record-start" title="toggle continuous recording mode"></div>' +
-                                '<div class="button icon camera-action-button mouse-effect up" title="up"></div>' +
-                                '<div class="button icon camera-action-button mouse-effect down" title="down"></div>' +
-                                '<div class="button icon camera-action-button mouse-effect left" title="left"></div>' +
-                                '<div class="button icon camera-action-button mouse-effect right" title="right"></div>' +
                                 '<div class="button icon camera-action-button mouse-effect zoom-in" title="zoom in"></div>' +
                                 '<div class="button icon camera-action-button mouse-effect zoom-out" title="zoom out"></div>' +
                                 '<div class="button icon camera-action-button mouse-effect preset preset1" title="preset 1"></div>' +
@@ -4605,12 +4608,17 @@ function addCameraFrameUi(cameraConfig) {
         'preset8': preset8Button,
         'preset9': preset9Button
     };
+
+    var numButtons = cameraConfig.actions.length;
     
     cameraConfig.actions.forEach(function (action) {
         var button = actionButtonDict[action];
         if (!button) {
             return;
         }
+	if(action == 'up'||action == 'down'||action == 'left'||action == 'right'){
+	    numButtons--;
+	}
         
         button.css('display', '');
         button.click(function () {
@@ -4632,10 +4640,12 @@ function addCameraFrameUi(cameraConfig) {
             doAction(cameraId, action, function () {
                 button.removeClass('pending');
             });
+	    
+	    return false;
         })
     });
     
-    if (cameraConfig.actions.length <= 4) {
+    if (numButtons <= 4) {
         cameraOverlay.find('div.camera-overlay-bottom').addClass('few-buttons');
     }
     else {

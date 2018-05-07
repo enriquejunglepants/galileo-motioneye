@@ -1150,19 +1150,36 @@ div.camera-action-button.record-stop {
 }
 
 div.camera-action-button.up {
+    opacity: 0.3;
+    position: absolute;
     background-position: -900% 0px;
+    margin-top: 2.5em;
+    left: 50%;
+    margin-left: -1.25em;
 }
-
-div.camera-action-button.right {
-    background-position: -1000% 0px;
-}
-
 div.camera-action-button.down {
+    opacity: 0.3;
+    position: absolute;
     background-position: -1100% 0px;
+    bottom: 0%;
+    margin-bottom: 2.5em;
+    left: 50%;
+    margin-left: -1.25em;
 }
-
 div.camera-action-button.left {
+    opacity: 0.3;
+    position: absolute;
     background-position: -1200% 0px;
+    top: 50%;
+    margin-top: -1.25em;
+}
+div.camera-action-button.right {
+    opacity: 0.3;
+    position: absolute;
+    background-position: -1000% 0px;
+    right: 0%;
+    top: 50%;
+    margin-top: -1.25em;
 }
 
 div.camera-action-button.zoom-in {
