@@ -331,9 +331,6 @@ def start_motion():
 
     try:
         motionctl.start()
-        od = ODThread()
-        od.start()
-
     except Exception as e:
         logging.error(str(e), exc_info=True)
 
@@ -388,6 +385,10 @@ def run():
         smbctl.start()
         logging.info('smb mounts started')
 
+    od = ODThread()
+    od.start()
+    logging.info('object detection started')
+
     template.add_context('static_path', 'static/')
 
     application = Application(handler_mapping, debug=False, log_function=_log_request,
@@ -398,12 +399,11 @@ def run():
 
     io_loop = IOLoop.instance()
     io_loop.start()
+    #   KEEPS LOOPING UNTIL STOPPED
 
     logging.info('server stopped')
 
-    for od in ODThread.od_list:
-        od.stop()
-
+    od.stop()
     logging.info('object detection stopped')
 
     tasks.stop()

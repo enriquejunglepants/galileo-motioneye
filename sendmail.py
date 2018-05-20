@@ -41,11 +41,13 @@ import tzctl
 
 
 messages = {
-    'motion_start': 'Motion has been detected by camera "%(camera)s/%(hostname)s" at %(moment)s (%(timezone)s).'
+    'motion_start': 'Motion has been detected by camera "%(camera)s/%(hostname)s" at %(moment)s (%(timezone)s).',
+    'object_detected': '%(object)s (%(confidence)s) detected by camera "%(camera)s/%(hostname)s" at %(moment)s (%(timezone)s).'
 }
 
 subjects = {
-    'motion_start': 'motionEye: motion detected by "%(camera)s"'
+    'motion_start': 'motionEye: motion detected by "%(camera)s"',
+    'object_detected': 'motionEye: %(object)s detected by "%(camera)s"'
 }
 
 

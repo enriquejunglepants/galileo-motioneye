@@ -1758,8 +1758,10 @@ class RelayEventHandler(BaseHandler):
         if event == 'start':
             if not camera_config['@motion_detection']:
                 logging.debug('ignoring start event for camera with id %s and motion detection disabled' % camera_id)
-                return self.finish_json()
 
+                return self.finish_json()
+            #from object_detection.ODThread import ODThread
+            #ODThread.img_todo[camera_id] = mjpgclient.get_jpg(camera_id)
             motionctl.set_motion_detected(camera_id, True)
 
         elif event == 'stop':

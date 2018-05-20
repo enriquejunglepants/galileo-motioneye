@@ -20,9 +20,13 @@ from utils import visualization_utils as vis_util
 import logging
 import config
 import mjpgclient
+import motionctl
+import settings
+import subprocess
 
 class ODThread:
-    od_list=[]
+    img_todo = {}
+    img_done = {}
 
     MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
     MODEL_FILE = MODEL_NAME + '.tar.gz'
@@ -31,10 +35,19 @@ class ODThread:
     PATH_TO_LABELS = os.path.join('object_detection','data', 'mscoco_label_map.pbtxt')
     NUM_CLASSES = 90
 
+    # if none of the cameras need processing,
+    #   the thread will sleep this long before checking again
+    #   This is to avoid unnecessary resource consumption
+    INACTIVE_SLEEP_TIME = 0.5
+
     def __init__(self):
         self.stopped=False
-        #TF variables
 
+        for camera_id in config.get_camera_ids():
+            ODThread.img_todo[camera_id] = None
+            ODThread.img_done[camera_id] = None
+
+        #TF variables
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
@@ -43,37 +56,37 @@ class ODThread:
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
         self.label_map = label_map_util.load_labelmap(ODThread.PATH_TO_LABELS)
-        logging.debug(self.label_map)
         self.categories = label_map_util.convert_label_map_to_categories(self.label_map, max_num_classes=ODThread.NUM_CLASSES, use_display_name=True)
         self.category_index = label_map_util.create_category_index(self.categories)
         self.sess = tf.Session(graph=self.detection_graph)
-        #self.im = None
         self.proc_im = None
-        #self.mjpg = mjpg
-        #self.next_im = None
-        ODThread.od_list.append(self)
-
 
     def start(self):
         Thread(target=self.update, args=()).start()
         return self
 
     def update(self):
-        # keep looping infinitely until the thread is stopped
         while True:
-            # if the thread indicator variable is set, stop the thread
             if self.stopped:
                 return
 
+            od_active = False
             for camera_id in config.get_camera_ids():
-                #self.process_image(mjpgclient.get_jpg(camera_id))
-                #cam_conf = config.get_camera(camera_id)
-                #w = cam_conf['width']
-                #h=cam_conf['height']
-                logging.debug('processing camera %s'%camera_id)
-                im = self.bytes_to_np(mjpgclient.get_jpg(camera_id))
-                if im is not None:
-                    self.process_image(im)
+                #logging.debug('processing camera %s'%camera_id)
+                camera_config = config.get_camera(camera_id)
+                if camera_config['@motion_detection']:
+                    if motionctl.is_motion_detected(camera_id):
+                        #logging.debug(camera_config)
+                        #im_bytes = ODThread.img_todo[camera_id]
+                        im_bytes = mjpgclient.get_jpg(camera_id)
+                        #ODThread.img_todo[camera_id]=None
+                        if im_bytes is not None:
+                            # OD has been requested for this camera
+                            od_active = True
+                            im = self.bytes_to_np(im_bytes)
+                            self.process_image(im)
+            if not od_active:
+                time.sleep(ODThread.INACTIVE_SLEEP_TIME)
 
     def read(self):
         # return the frame most recently read
@@ -91,18 +104,11 @@ class ODThread:
             return
 
         bio = BytesIO(im)
-        try:
-            imPil = Image.open(bio)
-        except:
-            logging.error("image is bad. do not want.")
-            return
+        imPil = Image.open(bio)
+
         (im_width, im_height) = imPil.size
         im_np = np.array(imPil.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
         return im_np
-        #im = Image.open(bio)
-        #im_np = np.frombuffer(bio.getbuffer())
-        #im_np=np.fromstring(bio.read(),np.uint8)
-        #logging.debug(im_np.size)
 
     def process_image(self,im,draw_box=False):
         #im = open('happysheep.jpg','rb').read()
@@ -124,7 +130,6 @@ class ODThread:
             [boxes, scores, classes, num_detections],
             feed_dict={image_tensor: image_np_expanded})
 
-
         if draw_box:
             # Visualization of the results of a detection.
             vis_util.visualize_boxes_and_labels_on_image_array(
@@ -135,17 +140,34 @@ class ODThread:
                 self.category_index,
                 use_normalized_coordinates=True,
                 line_thickness=8)
+            #sio = StringIO.StringIO()
+            #image.save(sio, format='JPEG')
 
         end_t = time.time()
         logging.debug('%.3f seconds'%(end_t-start_t))
 
         thresh = 0.5
-        objects = [{'name': self.category_index[classes[0][i]]['name'],'score':scores[0][i]} for i in range(len(classes[0])) if scores[0][i]>=thresh]
+        objects = [{'name': self.category_index[classes[0][i]]['name'],'score':scores[0][i],'box':boxes[0][i]} for i in range(len(classes[0])) if scores[0][i]>=thresh]
 
         logging.debug(objects)
+
+        #command = "/home/jorey/Code/Python/motioneye/motioneye/scripts/relayevent.sh"
+        #on_event_start /home/jorey/Code/Python/motioneye/motioneye/scripts/relayevent.sh "../config/motioneye.conf" start %t; /usr/bin/python /home/jorey/Code/Python/motioneye/motioneye/meyectl.pyc sendmail -c ../config/motioneye.conf 'smtp.gmail.com' '587' 'boochcam@gmail.com' 'echodelta#1' 'True' 'boochcam@gmail.com' 'boochcam@gmail.com' 'motion_start' '%t' '%Y-%m-%dT%H:%M:%S' '0'
+        #p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+
         for o in objects:
             if o['name']=='person':
                 logging.debug('person detected')
+                center_x = (o['box'][0]+o['box'][2])/2
+                center_y = (o['box'][1]+o['box'][3])/2
+                angle_x = center_x*57.62/2
+                if center_x < .5:
+                    angle_x*=-1;
+                angle_y = center_y*46.05/2
+                if center_y < .5:
+                    angle_y*=-1;
+
+
 
     def mail(obj,confidence):
         import sendmail
