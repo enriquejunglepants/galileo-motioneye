@@ -29,6 +29,7 @@ import config
 import motionctl
 import settings
 import utils
+from object_detection.ODThread import ODThread
 
 
 class MjpgClient(IOStream):
@@ -318,6 +319,7 @@ def _garbage_collector():
             break
 
         # check for last access timeout
+        '''
         delta = now - client.get_last_access()
         if settings.MJPG_CLIENT_IDLE_TIMEOUT and delta > settings.MJPG_CLIENT_IDLE_TIMEOUT:
             msg = ('mjpg client for camera %(camera_id)s on port %(port)s has been idle '
@@ -329,3 +331,4 @@ def _garbage_collector():
             client.close()
 
             continue
+        '''
