@@ -1896,6 +1896,7 @@ function cameraUi2Dict() {
 
         /* motion detection */
         'motion_detection': $('#motionDetectionEnabledSwitch')[0].checked,
+        'object_detection': $('#objectDetectionEnabledSwitch')[0].checked,
         'frame_change_threshold': $('#frameChangeThresholdSlider').val(),
         'auto_noise_detect': $('#autoNoiseDetectSwitch')[0].checked,
         'noise_level': $('#noiseLevelSlider').val(),

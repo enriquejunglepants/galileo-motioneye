@@ -88,6 +88,7 @@ _KNOWN_MOTION_OPTIONS = {
     'netcam_userpass',
     'noise_level',
     'noise_tune',
+    'object_detection',
     'on_event_end',
     'on_event_start',
     'on_movie_end',
@@ -788,6 +789,7 @@ def motion_camera_ui_to_dict(ui, old_config=None):
 
         # motion detection
         '@motion_detection': ui['motion_detection'],
+        'object_detection': ui['object_detection'],
         'emulate_motion': False,
         'text_changes': ui['show_frame_changes'],
         'locate_motion_mode': ui['show_frame_changes'],
@@ -1190,6 +1192,7 @@ def motion_camera_dict_to_ui(data):
 
         # motion detection
         'motion_detection': data['@motion_detection'],
+        'object_detection': data['object_detection'],
         'show_frame_changes': data['text_changes'] or data['locate_motion_mode'],
         'auto_noise_detect': data['noise_tune'],
         'noise_level': int(int(data['noise_level']) / 2.55),
@@ -1985,6 +1988,7 @@ def _set_default_motion_camera(camera_id, data):
     data.setdefault('text_double', False)
 
     data.setdefault('@motion_detection', True)
+    data.setdefault('object_detection', True)
     data.setdefault('text_changes', False)
     data.setdefault('locate_motion_mode', False)
     data.setdefault('locate_motion_style', 'redbox')
